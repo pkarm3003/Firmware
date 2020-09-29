@@ -3167,7 +3167,7 @@ public:
 	{
 		switch (N) {
 		case 0:
-			return "ACTUATOR_CONTROL_TARGET0";
+			return "ACTUATOR_CONTROL_TARGET3";
 
 		case 1:
 			return "ACTUATOR_CONTROL_TARGET1";
@@ -3214,7 +3214,7 @@ protected:
 		// XXX this can be removed once the multiplatform system remaps topics
 		switch (N) {
 		case 0:
-			_act_ctrl_sub = new uORB::Subscription{ORB_ID(actuator_controls_0)};
+			_act_ctrl_sub = new uORB::Subscription{ORB_ID(actuator_controls_3)};
 			break;
 
 		case 1:
@@ -3244,7 +3244,7 @@ protected:
 			mavlink_actuator_control_target_t msg{};
 
 			msg.time_usec = act_ctrl.timestamp;
-			msg.group_mlx = N;
+			msg.group_mlx = 3;
 
 			for (unsigned i = 0; i < sizeof(msg.controls) / sizeof(msg.controls[0]); i++) {
 				msg.controls[i] = act_ctrl.control[i];
