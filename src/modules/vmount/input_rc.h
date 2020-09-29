@@ -41,6 +41,7 @@
 
 #include "input.h"
 #include <uORB/topics/manual_control_setpoint.h>
+#include <uORB/topics/debug_vect.h>
 
 namespace vmount
 {
@@ -84,6 +85,10 @@ private:
 	const bool _do_stabilization;
 	int _aux_channels[3];
 	int _manual_control_setpoint_sub = -1;
+	float debug_sub_fd = -1.00000;
+	float vect_conX   = 0;
+	float vect_conY   = 0;
+	float gimbal_mode = 0;
 
 	bool _first_time = true;
 	float _last_set_aux_values[3] = {};

@@ -62,15 +62,24 @@ InputRC::~InputRC()
 	if (_manual_control_setpoint_sub >= 0) {
 		orb_unsubscribe(_manual_control_setpoint_sub);
 	}
+	if (debug_sub_fd >= 0) {
+		orb_unsubscribe(debug_sub_fd);
+	}
 }
 
 int InputRC::initialize()
 {
 	_manual_control_setpoint_sub = orb_subscribe(ORB_ID(manual_control_setpoint));
+	debug_sub_fd = orb_subscribe(ORB_ID(debug_vect));
 
 	if (_manual_control_setpoint_sub < 0) {
 		return -errno;
 	}
+
+	if (debug_sub_fd < 0) {
+		return -errno;
+	}
+
 
 	return 0;
 }
@@ -106,19 +115,37 @@ int InputRC::update_impl(unsigned int timeout_ms, ControlData **control_data, bo
 
 bool InputRC::_read_control_data_from_subscription(ControlData &control_data, bool already_active)
 {
+	struct debug_vect_s vect;
+	orb_copy(ORB_ID(debug_vect), debug_sub_fd, &vect);
 	manual_control_setpoint_s manual_control_setpoint;
 	orb_copy(ORB_ID(manual_control_setpoint), _manual_control_setpoint_sub, &manual_control_setpoint);
 	control_data.type = ControlData::Type::Angle;
 
 	float new_aux_values[3];
 
-	for (int i = 0; i < 3; ++i) {
-		new_aux_values[i] = _get_aux_value(manual_control_setpoint, i);
+	vect_conX   = vect.x;
+	vect_conY   = vect.y;
+	gimbal_mode = vect.z;
+
+	if(gimbal_mode > 0.8f){
+		for (int i = 0; i < 3; ++i) {
+			new_aux_values[i] = _get_aux_value(manual_control_setpoint, i);
+		}
+	}
+	else if(gimbal_mode < 0.3f){
+		for (int i = 0; i < 3; ++i) {
+			new_aux_values[i] = _get_aux_value(manual_control_setpoint, i);
+		}
+	}
+	else{
+		new_aux_values[0] = 0;
+		new_aux_values[1] = vect_conY;
+		new_aux_values[2] = vect_conX;
 	}
 
 	// If we were already active previously, we just update normally. Otherwise, there needs to be
 	// a major stick movement to re-activate manual (or it's running for the very first time).
-	bool major_movement = false;
+	bool major_movement = true;
 
 	// Detect a big stick movement
 	for (int i = 0; i < 3; ++i) {
